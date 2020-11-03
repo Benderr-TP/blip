@@ -13,7 +13,7 @@ import TestUtils from 'react-dom/test-utils';
 import mutationTracker from 'object-invariant-test-helper';
 import _ from 'lodash';
 import moment from 'moment';
-import { mount, shallow } from 'enzyme';
+import { mount as enzymeMount, shallow } from 'enzyme';
 import { components as vizComponents } from '@tidepool/viz';
 import i18next from '../../../app/core/language';
 import createReactClass from 'create-react-class';
@@ -30,6 +30,9 @@ const t = i18next.t.bind(i18next);
 // otherwise dependencies mocked will be bound to the wrong scope!
 import PD, { PatientData, PatientDataClass, getFetchers, mapStateToProps } from '../../../app/pages/patientdata/patientdata.js';
 import { MGDL_UNITS } from '../../../app/core/constants';
+import { ToastProvider } from '../../../app/providers/ToastProvider';
+
+const mount = el => enzymeMount(el, { wrappingComponent: ToastProvider });
 
 describe('PatientData', function () {
   const defaultProps = {
@@ -496,8 +499,8 @@ describe('PatientData', function () {
       });
 
       beforeEach(() => {
-        wrapper = mount(<PatientDataClass {...props} />);
-        instance = wrapper.instance();
+        wrapper = mount(<PatientData {...props} />);
+        instance = wrapper.instance().getWrappedInstance();
 
         sinon.spy(instance, 'deriveChartTypeFromLatestData');
 
@@ -941,8 +944,8 @@ describe('PatientData', function () {
       });
 
       beforeEach(() => {
-        wrapper = mount(<PatientDataClass {...props} />);
-        instance = wrapper.instance();
+        wrapper = mount(<PatientData {...props} />);
+        instance = wrapper.instance().getWrappedInstance();
 
         // Set data loaded and chart endpoints to hide loader and allow data views to render
         wrapper.setProps(_.assign({}, props, {
@@ -1114,20 +1117,23 @@ describe('PatientData', function () {
       removeGeneratedPDFS: sinon.stub(),
       generatingPDF: { inProgress: false },
       pdf: {},
+      t,
     };
 
     it('should clear patient data upon refresh', function() {
-      const elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
       const callCount = props.dataWorkerRemoveDataRequest.callCount;
-      elem.handleRefresh();
+      instance.handleRefresh();
 
       expect(props.dataWorkerRemoveDataRequest.callCount).to.equal(callCount + 1);
     });
 
     it('should clear generated pdfs upon refresh', function() {
-      const elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
       const callCount = props.removeGeneratedPDFS.callCount;
-      elem.handleRefresh();
+      instance.handleRefresh();
       expect(props.removeGeneratedPDFS.callCount).to.equal(callCount + 1);
     });
 
@@ -1613,7 +1619,7 @@ describe('PatientData', function () {
     let instance;
 
     beforeEach(() => {
-      wrapper = shallow(<PatientDataClass {...defaultProps} />);
+      wrapper = shallow(<PD.WrappedComponent {...defaultProps} />);
       instance = wrapper.instance();
     });
 
@@ -2040,19 +2046,22 @@ describe('PatientData', function () {
     const props = {
       dataWorkerRemoveDataSuccess: sinon.stub(),
       removeGeneratedPDFS: sinon.stub(),
+      t,
     };
 
     it('should clear generated pdfs upon refresh', function() {
-    const elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
       const callCount = props.removeGeneratedPDFS.callCount;
-      elem.componentWillUnmount();
+      instance.componentWillUnmount();
       expect(props.removeGeneratedPDFS.callCount).to.equal(callCount + 1);
     });
 
     it('should call `props.dataWorkerRemoveDataSuccess`', function() {
-    const elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
       const callCount = props.dataWorkerRemoveDataSuccess.callCount;
-      elem.componentWillUnmount();
+      instance.componentWillUnmount();
       expect(props.dataWorkerRemoveDataSuccess.callCount).to.equal(callCount + 1);
       sinon.assert.calledWith(props.dataWorkerRemoveDataSuccess, undefined, true)
     });
@@ -2521,8 +2530,8 @@ describe('PatientData', function () {
           t,
         };
 
-        const wrapper = mount(<PatientDataClass {...props} />);
-        const instance = wrapper.instance();
+        const wrapper = mount(<PatientData {...props} />);
+        const instance = wrapper.instance().getWrappedInstance();
         const setStateSpy = sinon.spy(instance, 'setState');
 
         instance.setState({ printDialogProcessing: true, printDialogOpen: true });
@@ -3733,12 +3742,14 @@ describe('PatientData', function () {
         trackMetric: sinon.stub(),
         generatingPDF: { inProgress: false },
         pdf: {},
+        t,
       };
 
-      var elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
 
       var callCount = props.trackMetric.callCount;
-      elem.handleSwitchToBasics();
+      instance.handleSwitchToBasics();
       expect(props.trackMetric.callCount).to.equal(callCount + 1);
       expect(props.trackMetric.calledWith('Clicked Switch To Basics')).to.be.true;
     });
@@ -3788,12 +3799,14 @@ describe('PatientData', function () {
         t,
         generatingPDF: { inProgress: false },
         pdf: {},
+        t,
       };
 
-      var elem = TestUtils.renderIntoDocument(<PatientDataClass {...props}/>);
+      const wrapper = shallow(<PatientDataClass {...props}/>);
+      const instance = wrapper.instance();
 
       var callCount = props.trackMetric.callCount;
-      elem.handleSwitchToDaily('2016-08-19T01:51:55.000Z', 'testing');
+      instance.handleSwitchToDaily('2016-08-19T01:51:55.000Z', 'testing');
       expect(props.trackMetric.callCount).to.equal(callCount + 1);
       expect(props.trackMetric.calledWith('Clicked Basics testing calendar')).to.be.true;
     });
@@ -3872,12 +3885,14 @@ describe('PatientData', function () {
         trackMetric: sinon.stub(),
         generatingPDF: { inProgress: false },
         pdf: {},
+        t,
       };
 
-      var elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
 
       var callCount = props.trackMetric.callCount;
-      elem.handleSwitchToTrends('2016-08-19T01:51:55.000Z');
+      instance.handleSwitchToTrends('2016-08-19T01:51:55.000Z');
       expect(props.trackMetric.callCount).to.equal(callCount + 1);
       expect(props.trackMetric.calledWith('Clicked Switch To Modal')).to.be.true;
     });
@@ -3964,12 +3979,14 @@ describe('PatientData', function () {
         trackMetric: sinon.stub(),
         generatingPDF: { inProgress: false },
         pdf: {},
+        t,
       };
 
-      var elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
 
       var callCount = props.trackMetric.callCount;
-      elem.handleSwitchToBgLog('2016-08-19T01:51:55.000Z');
+      instance.handleSwitchToBgLog('2016-08-19T01:51:55.000Z');
       expect(props.trackMetric.callCount).to.equal(callCount + 1);
       expect(props.trackMetric.calledWith('Clicked Switch To Two Week')).to.be.true;
     });
@@ -4048,12 +4065,14 @@ describe('PatientData', function () {
         trackMetric: sinon.stub(),
         generatingPDF: { inProgress: false },
         pdf: {},
+        t,
       };
 
-      var elem = TestUtils.findRenderedComponentWithType(TestUtils.renderIntoDocument(<PatientData {...props} />), PatientDataClass);
+      const wrapper = shallow(<PatientDataClass {...props} />);
+      const instance = wrapper.instance();
 
       var callCount = props.trackMetric.callCount;
-      elem.handleSwitchToSettings();
+      instance.handleSwitchToSettings();
       expect(props.trackMetric.callCount).to.equal(callCount + 1);
       expect(props.trackMetric.calledWith('Clicked Switch To Settings')).to.be.true;
     });
